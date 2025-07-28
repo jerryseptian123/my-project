@@ -1,0 +1,14 @@
+{
+  "name": "Miner Server",
+  "image": "mcr.microsoft.com/devcontainers/node:18",  // Node.js base image
+  "forwardPorts": [4000],
+  "portsAttributes": {
+    "4000": {
+      "label": "WebSocket Server",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  },
+  "postCreateCommand": "npm install",
+  "postStartCommand": "npm start"
+}
