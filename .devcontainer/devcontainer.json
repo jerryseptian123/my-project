@@ -1,6 +1,6 @@
 {
   "name": "Miner Server",
-  "image": "mcr.microsoft.com/devcontainers/node:18",  // Node.js base image
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:18", 
   "forwardPorts": [4000],
   "portsAttributes": {
     "4000": {
