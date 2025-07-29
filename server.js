@@ -17,39 +17,56 @@ const wss = new WebSocket.Server({ server });
 wss.on('connection', (ws) => {
   console.log('Client connected');
 
+  let currentProcess = null;
+
+  const safeSend = (msg) => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(msg);
+    }
+  };
+
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
 
       if (data.type === 'ping') {
-        ws.send(JSON.stringify({ type: 'pong' }));
+        safeSend(JSON.stringify({ type: 'pong' }));
         return;
       }
 
       if (data.command) {
-        console.log('Running command with spawn:', data.command);
+        console.log('Running command:', data.command);
 
-        const cmd = spawn('/bin/bash', ['-c', data.command]);
+        // Kill any previous running process
+        if (currentProcess) {
+          currentProcess.kill();
+        }
 
-        cmd.stdout.on('data', (chunk) => {
-          ws.send(chunk.toString());
+        currentProcess = spawn('/bin/bash', ['-c', data.command]);
+
+        currentProcess.stdout.on('data', (chunk) => {
+          safeSend(chunk.toString());
         });
 
-        cmd.stderr.on('data', (chunk) => {
-          ws.send('[stderr] ' + chunk.toString());
+        currentProcess.stderr.on('data', (chunk) => {
+          safeSend('[stderr] ' + chunk.toString());
         });
 
-        cmd.on('close', (code) => {
-          ws.send(`[process exited with code ${code}]`);
+        currentProcess.on('close', (code) => {
+          safeSend(`[process exited with code ${code}]`);
+          currentProcess = null;
         });
       }
     } catch (err) {
-      ws.send(`Invalid message: ${err.message}`);
+      safeSend(`Invalid message: ${err.message}`);
     }
   });
 
   ws.on('close', () => {
     console.log('Client disconnected');
+    if (currentProcess) {
+      currentProcess.kill();
+    }
   });
 });
 
