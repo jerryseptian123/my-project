@@ -4,8 +4,23 @@ const { spawn } = require('child_process');
 
 const server = http.createServer((req, res) => {
   if (req.url === '/healthz') {
-    res.writeHead(200);
-    res.end('OK');
+    res.writeHead(200, {
+      'Content-Type': 'text/plain',
+      'Transfer-Encoding': 'chunked',
+    });
+
+    res.write('Awake...\n');
+
+    const interval = setInterval(() => {
+      res.write(`ping ${new Date().toISOString()}\n`);
+    }, 5000); // kirim tiap 5 detik
+
+    // Akhiri setelah 5 menit
+    setTimeout(() => {
+      clearInterval(interval);
+      res.write('Done.\n');
+      res.end();
+    }, 300000); // 5 menit
   } else {
     res.writeHead(404);
     res.end();
@@ -37,7 +52,7 @@ wss.on('connection', (ws) => {
       if (data.command) {
         console.log('Running command:', data.command);
 
-        // Kill any previous running process
+        // Kill previous process
         if (currentProcess) {
           currentProcess.kill();
         }
